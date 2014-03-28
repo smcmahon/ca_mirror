@@ -39,9 +39,7 @@ class PloneSpider(Spider):
         self.html_files = []
 
     def normalizeURL(self, url, base):
-        print url, base
-        if url == 'http://localhost:8080/../../../colonialart/archive/1033a-1033b':
-            import pdb; pdb.set_trace()
+        # print url, base
         for alias in self.aliases:
             url = url.replace(alias, self.base)
         newurl = urlparse.urljoin(base, url)
