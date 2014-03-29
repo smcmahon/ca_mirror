@@ -203,7 +203,7 @@ with open(os.path.join(os.path.dirname(__file__), 'mime.types')) as mt:
 
 print "mirroring, pass one"
 spider.weburls(spider.base, width=5000000, depth=5000)
-# spider.weburls(spider.base, width=50, depth=2)
+# spider.weburls(spider.base, width=5, depth=2)
 print "%s items copied" % len(spider.filepaths)
 
 print "mirroring, pass two: normalize urls"
@@ -212,6 +212,11 @@ for fn, cbase in spider.html_files:
     with open(fn, 'rb') as f:
         content = f.read()
     newcontent = spider._fixlinks(content, cbase)
+    # affix a mirror stylesheet import to the end of head
+    newcontent = newcontent.replace(
+        "</head>",
+        """<style media="screen" type="text/css">@import url(/mirror.css);</style></head>"""
+        )
     newcontent = spider._fixCSSlinks(newcontent, cbase)
     with open(fn, 'wb') as f:
         f.write(newcontent)
