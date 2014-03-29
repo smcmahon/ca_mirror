@@ -87,7 +87,7 @@ class PloneSpider(Spider):
 
         def fixLink(mo):
             groups = mo.groups()
-            url = self.normalizeURL(groups[0], base)
+            url = self.normalizeURL(groups[0].replace("'", "").replace('"', ''), base)
             if url in self.filepaths:
                 url = "/%s" % self.filepath(url, url, 'text/html')
             rez = "url(%s)" % url
@@ -140,7 +140,7 @@ class PloneSpider(Spider):
                 rurl += ext
             else:
                 rurl = os.path.join('%s%s' % (rurl, ext), "view%s" % ext)
-        rurl = rurl.replace('&amp;', '_').replace('&', '_').replace('=', '_').replace('+', '_')
+        rurl = rurl.replace('%', '_').replace('&amp;', '_').replace('&', '_').replace('=', '_').replace('+', '_')
         rurl = rurl.replace(self.base, '')
         if rurl.startswith('/'):
             rurl = rurl[1:]
@@ -172,7 +172,7 @@ class PloneSpider(Spider):
         contents = url.read()
         url.close()
         # URLs with mimetype 'text/html" scanned for URLs
-        if mimetype == 'text/html':
+        if mimetype in ('text/html', 'text/css'):
             # Feed parser
             urls = self._webparser(contents, cbase)
             # add to list of html files that will need rewriting.
