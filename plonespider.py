@@ -9,6 +9,7 @@ base_href_pattern = re.compile(r"""\<base.*?href=["'](.+?)['"] */?\>""", re.IGNO
 css_link_pattern = re.compile(r"""url\((.+?)\)""", re.IGNORECASE)
 link_pattern = re.compile(r"""(href|src|link)=(["'])(.+?)(["'])""", re.IGNORECASE)
 link_pattern_nocap = re.compile(r"""(?:href|src|link)=["'](.+?)["']""", re.IGNORECASE)
+is_css_or_js_pattern = re.compile(r"""\.(?:css|js)$""")
 
 
 def getBaseHref(content, base):
@@ -18,6 +19,9 @@ def getBaseHref(content, base):
     if mo:
         return mo.group(1)
     return base
+
+def is_css_or_js(s):
+    return is_css_or_js_pattern.search(s) is not None
 
 
 class PloneSpider(spider.Spider):
@@ -117,10 +121,8 @@ class PloneSpider(spider.Spider):
         rez = link_pattern_nocap.findall(content)
         rez += css_link_pattern.findall(content)
         for url in rez:
-            # if 'CntntsJLOND.png' in url:
-            #     import pdb; pdb.set_trace()
             normurl = self.normalizeURL(url, base)
-            if normurl.startswith(self.base):
+            if normurl.startswith(self.base) or is_css_or_js(normurl):
                 links.append(normurl)
         return False, links
 
@@ -138,19 +140,19 @@ class PloneSpider(spider.Spider):
 
         def pathize():
             '''Strips base URL from full URLs to produce paths'''
+            rbase = self.base.rstrip('/')
             for url in urls:
-                # if 'CntntsJLOND.png' in url:
-                #     import pdb; pdb.set_trace()
                 extension = self._mimetypes.get(url.rstrip('/'), 'notfound')
                 # Remove base URL from path list
-                url = url.replace(self.base, '')
-                url = url.rstrip('/')
+                url = url.replace(rbase, '')
+                url = url.strip('/')
                 # remove 'view'
                 if url.endswith('/view'):
                     url = url[:-5]
-                index_item = 'index.%s' % extension
-                if not url.endswith(index_item):
-                    url = '/'.join([url, index_item]).lstrip('/')
+                if not is_css_or_js(url):
+                    index_item = 'index.%s' % extension
+                    if not url.endswith(index_item):
+                        url = '/'.join([url, index_item]).lstrip('/')
                 # Verify removal of base URL and remove it if found
                 if url.find(':') != -1:
                     url = urlsplit(url)[2:][0]
@@ -200,7 +202,7 @@ class PloneSpider(spider.Spider):
                     return 0, 0
             # Process full URLs i.e. 'http://foo/bar
             if url.find(':') != -1:
-                if not url.startswith(rbase):
+                if not (url.startswith(rbase) or is_css_or_js(url)):
                     # print self.base, url, url.startswith(self.base)
                     visited[url], outside[url] = 1, 1
                     return 0, 0
