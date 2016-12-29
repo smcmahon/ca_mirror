@@ -156,6 +156,8 @@ class PloneSpider(spider.Spider):
                 # Verify removal of base URL and remove it if found
                 if url.find(':') != -1:
                     url = urlsplit(url)[2:][0]
+                if url.startswith('//'):
+                    url = url[1:]
                 yield url.rstrip('/')
 
         # Assignments
@@ -285,6 +287,19 @@ class PloneSpider(spider.Spider):
                 nurl,
                 groups[3],
             )
+
+        def fixCSSLink(mo):
+            groups = mo.groups()
+            furl = self.normalizeURL(groups[2], base)
+            nurl = mypaths.get(furl)
+            if nurl is None:
+                nurl = furl
+                # nurl = 'nonesuch'
+            else:
+                nurl = relurl('/%s' % nurl, '/%s' % path)
+            rez = "url(%s)" % nurl
+            return rez
+
 
         super(PloneSpider, self)._mirror(lists, root, threads)
         # fix URLs in downloaded html
