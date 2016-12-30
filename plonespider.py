@@ -183,8 +183,6 @@ class PloneSpider(spider.Spider):
 
         Modified to only accept URLS at or under base.
         '''
-        # if 'CntntsJLOND.png' in url:
-        #     import pdb; pdb.set_trace()
         # Assignments
         visited, webopen = self._visited, self._webopen
         sb, depth, urljoin = self._sb[2], self.depth, self._uparse.urljoin
@@ -271,16 +269,20 @@ class PloneSpider(spider.Spider):
             target = '.' + target.path
             return posixpath.relpath(target, start=base_dir)
 
-        def fixLink(mo):
-            groups = mo.groups()
+        def pathFix(groups):
             furl = self.normalizeURL(groups[2], base)
             nurl = mypaths.get(furl)
             if nurl is None:
                 nurl = furl
+                print groups[2], base
                 # nurl = 'nonesuch'
             else:
                 nurl = relurl('/%s' % nurl, '/%s' % path)
                 # print path, furl, nurl
+
+        def fixLink(mo):
+            groups = mo.groups()
+            nurl = pathFix(groups)
             return "%s=%s%s%s" % (
                 groups[0],
                 groups[1],
@@ -290,16 +292,8 @@ class PloneSpider(spider.Spider):
 
         def fixCSSLink(mo):
             groups = mo.groups()
-            furl = self.normalizeURL(groups[2], base)
-            nurl = mypaths.get(furl)
-            if nurl is None:
-                nurl = furl
-                # nurl = 'nonesuch'
-            else:
-                nurl = relurl('/%s' % nurl, '/%s' % path)
-            rez = "url(%s)" % nurl
-            return rez
-
+            nurl = pathFix(groups)
+            return "url(%s)" % nurl
 
         super(PloneSpider, self)._mirror(lists, root, threads)
         # fix URLs in downloaded html
@@ -318,5 +312,7 @@ class PloneSpider(spider.Spider):
                     content = f.read()
                 base = getBaseHref(content, self.base)
                 content = base_href_pattern.sub('', content)
+                content = link_pattern.sub(fixLink, content)
+                content = css_link_pattern.sub(fixCSSLink, content)
                 with open(fn, 'w') as f:
-                    f.write(link_pattern.sub(fixLink, content))
+                    f.write(content)
