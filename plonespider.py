@@ -269,20 +269,21 @@ class PloneSpider(spider.Spider):
             target = '.' + target.path
             return posixpath.relpath(target, start=base_dir)
 
-        def pathFix(groups):
-            furl = self.normalizeURL(groups[2], base)
+        def pathFix(url):
+            furl = self.normalizeURL(url, base)
             nurl = mypaths.get(furl)
             if nurl is None:
                 nurl = furl
-                print groups[2], base
-                # nurl = 'nonesuch'
             else:
-                nurl = relurl('/%s' % nurl, '/%s' % path)
+                if not nurl.startswith('/'):
+                    nurl = '/%s' % nurl
+                nurl = relurl('%s' % nurl, '/%s' % path)
                 # print path, furl, nurl
+            return nurl
 
         def fixLink(mo):
             groups = mo.groups()
-            nurl = pathFix(groups)
+            nurl = pathFix(groups[2])
             return "%s=%s%s%s" % (
                 groups[0],
                 groups[1],
@@ -291,8 +292,7 @@ class PloneSpider(spider.Spider):
             )
 
         def fixCSSLink(mo):
-            groups = mo.groups()
-            nurl = pathFix(groups)
+            nurl = pathFix(mo.groups()[0])
             return "url(%s)" % nurl
 
         super(PloneSpider, self)._mirror(lists, root, threads)
