@@ -16,7 +16,7 @@ my_spider = PloneSpider(
 # pass
 
 my_spider.webmirror(
-    root="/home/steve/lofland/ondh",
+    root="/home/steve/nobackup/lofland/ondh",
     base="http://groups.dcn.org/ondh",
     depth=1000,
     width=20000,
