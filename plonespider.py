@@ -304,9 +304,10 @@ class PloneSpider(spider.Spider):
                 self.paths
             )
         )
+        done = set()
         for url in self.urls:
             path = mypaths[url]
-            if path.endswith('.html'):
+            if path.endswith('.html') and path not in done:
                 fn = os.path.join(root, path)
                 with open(fn, 'r') as f:
                     content = f.read()
@@ -316,3 +317,4 @@ class PloneSpider(spider.Spider):
                 content = css_link_pattern.sub(fixCSSLink, content)
                 with open(fn, 'w') as f:
                     f.write(content)
+                done.add(path)
