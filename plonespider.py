@@ -152,13 +152,13 @@ class PloneSpider(spider.Spider):
                 if not is_css_or_js(url):
                     index_item = 'index.%s' % extension
                     if not url.endswith(index_item):
-                        url = '/'.join([url, index_item]).lstrip('/')
+                        url = '/'.join([url, index_item])
                 # Verify removal of base URL and remove it if found
                 if url.find(':') != -1:
                     url = urlsplit(url)[2:][0]
                 if url.startswith('//'):
                     url = url[1:]
-                yield url.rstrip('/')
+                yield url.strip('/')
 
         # Assignments
         urlsplit = self._uparse.urlsplit
