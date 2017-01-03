@@ -20,6 +20,7 @@ def getBaseHref(content, base):
         return mo.group(1)
     return base
 
+
 def is_css_or_js(s):
     return is_css_or_js_pattern.search(s) is not None
 
@@ -86,7 +87,7 @@ class PloneSpider(spider.Spider):
             cbase, base = newbase, (newbase, base[1])
         self._mimetypes[cbase] = self._mime_extensions.get(url.headers.type, 'bin')
         # URLs with mimetype 'text/html" scanned for URLs
-        if url.headers.type == 'text/html':
+        if url.headers.type == 'text/html' or cbase.endswith('.css'):
             # Feed parser
             contents = url.read()
             try:
@@ -158,6 +159,7 @@ class PloneSpider(spider.Spider):
                     url = urlsplit(url)[2:][0]
                 if url.startswith('//'):
                     url = url[1:]
+                url = url.replace('%', '_')
                 yield url.strip('/')
 
         # Assignments
@@ -307,7 +309,7 @@ class PloneSpider(spider.Spider):
         done = set()
         for url in self.urls:
             path = mypaths[url]
-            if path.endswith('.html') and path not in done:
+            if (path.endswith('.html') or path.endswith('.css')) and path not in done:
                 fn = os.path.join(root, path)
                 with open(fn, 'r') as f:
                     content = f.read()
