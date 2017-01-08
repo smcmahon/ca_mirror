@@ -30,8 +30,9 @@ class PloneSpider(spider.Spider):
         Peculiarities.
     """
 
-    def __init__(self, base=None, width=None, depth=None):
+    def __init__(self, base=None, width=None, depth=None, verbosity=0):
         super(PloneSpider, self).__init__(base=base, width=width, depth=depth)
+        self.verbosity = verbosity
         self._mimetypes = {}
         self._mime_extensions = {}
         white_split_pattern = re.compile(r'\s+')
@@ -79,6 +80,8 @@ class PloneSpider(spider.Spider):
         except IOError:
             self._visited[cbase] = 1
             self.badurls.append((base[1], cbase))
+            if self.verbosity > 0:
+                print "Bad url: %s" % cbase
             return False
         # Get real URL
         newbase = url.geturl()
@@ -95,15 +98,21 @@ class PloneSpider(spider.Spider):
             # Log URL if SGML parser can't parse it
             except self._sperror:
                 self._visited[cbase], self.badhtm[cbase] = 1, 1
+                if self.verbosity > 0:
+                    print "Bad url: %s" % cbase
                 return False
             url.close()
             # Return URL and extracted urls if it's good
             if not badurl:
+                if self.verbosity > 0:
+                    print "%s, %d" % (cbase, len(urls))
                 return cbase, urls
             # If the URL is bad (after BadUrl), stop processing and log URL
             else:
                 self._visited[cbase] = 1
                 self.badurls.append((base[1], cbase))
+                if self.verbosity > 0:
+                    print "Bad url: %s" % cbase
                 return False
         # Return URL of non-HTML resources and empty list
         else:
@@ -206,6 +215,8 @@ class PloneSpider(spider.Spider):
             if url.find(':') != -1:
                 if not (url.startswith(rbase) or is_css_or_js(url)):
                     # print self.base, url, url.startswith(self.base)
+                    if self.verbosity > 1:
+                        print "nopath: %s" % url
                     visited[url], outside[url] = 1, 1
                     return 0, 0
                 # urlseg = urlsplit(url)
@@ -238,6 +249,8 @@ class PloneSpider(spider.Spider):
                 if turl != url:
                     urlseg = urlsplit(turl)
                     # If URL is not in root domain, block it
+                    if self.verbosity > 1:
+                        print "blocked: %s" % turl
                     if urlseg[1] not in sb:
                         # Log as a redirected internal URL
                         redirs[(url, turl)] = 1
@@ -247,6 +260,8 @@ class PloneSpider(spider.Spider):
                         return 0, 0
                 # If URL exceeds depth, don't process
                 if len(turl.split('/')) >= depth:
+                    if self.verbosity > 1:
+                        print "to deep: %s" % turl
                     return 0, 0
                 # Otherwise return URL
                 else:
@@ -297,6 +312,8 @@ class PloneSpider(spider.Spider):
             nurl = pathFix(mo.groups()[0])
             return "url(%s)" % nurl
 
+        if self.verbosity > 0:
+            print "mirroring:" , len(self.urls), len(self.paths)
         super(PloneSpider, self)._mirror(lists, root, threads)
         # fix URLs in downloaded html
         # First, normalize saved URLs to have no trailing /
@@ -309,6 +326,8 @@ class PloneSpider(spider.Spider):
         done = set()
         for url in self.urls:
             path = mypaths[url]
+            if self.verbosity > 2:
+                print url, path
             if (path.endswith('.html') or path.endswith('.css')) and path not in done:
                 fn = os.path.join(root, path)
                 with open(fn, 'r') as f:
